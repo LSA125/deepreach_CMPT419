@@ -55,3 +55,8 @@ tzdata==2024.1
 urllib3==2.2.1
 wandb==0.16.3
 Werkzeug==3.0.1
+
+# dependencies originally declared by the hj_reachability code
+flax>=0.6.6
+jax>=0.4.25
+# numpy requirement already satisfied earlier

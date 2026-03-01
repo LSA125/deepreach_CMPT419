@@ -133,3 +133,7 @@ wandb
 
 # experiment data
 runs
+
+# patterns from the former hj_reachability submodule
+# (these were identical to the top‑level rules, so no additional
+# lines are strictly necessary — this comment records the merge)
