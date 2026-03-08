@@ -61,6 +61,14 @@ python run_experiment.py --mode train --experiment_class DeepReach --dynamics_cl
 ```
 Note that the script provides many common training arguments, like `num_epochs` and the option to `pretrain`. Up-to-date, documentation for these different training schemes is lacking; feel free to reach out to the lab for questions. `use_CSL` is an experimental training option (similar in spirit to actor-critic methods) being developed by SIA for improved value function learning. 
 
+## Running comparison.py
+
+Example command. Currently there is only the two dubins scenarios. Will add more dynamics later.
+
+```
+python3 comparison.py --model-path runs/dubins3d_tutorial_run/training/checkpoints/model_epoch_30000.pth --output-dir runs/comparison_dubins --resolution 30 --time-horizon 0.5 --device cpu
+```
+
 ## Monitoring a DeepReach Experiment
 Results for the Dubins3D system specified in the above section can be found in this [online WandB project](https://wandb.ai/aklin/DeepReachTutorial).
 We highly recommend users use the `--use_wandb` flag to log training progress to the free cloud-based Weights & Biases AI Developer Platform, where it can be easily viewed and shared.
