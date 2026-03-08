@@ -67,7 +67,7 @@ if (mode == 'all') or (mode == 'train'):
     p.add_argument('--steps_til_summary', type=int, default=100, help='Time interval in seconds until tensorboard summary is saved.')
     p.add_argument('--batch_size', type=int, default=1, help='Batch size used during training (irrelevant, since len(dataset) == 1).')
     p.add_argument('--lr', type=float, default=2e-5, help='learning rate. default=2e-5')
-    p.add_argument('--num_epochs', type=int, default=100000, help='Number of epochs to train for.')
+    p.add_argument('--num_epochs', type=int, default=30000, help='Number of epochs to train for.')
     p.add_argument('--clip_grad', default=0.0, type=float, help='Clip gradient.')
     p.add_argument('--use_lbfgs', default=False, type=bool, help='use L-BFGS.')
     p.add_argument('--adj_rel_grads', default=True, type=bool, help='adjust the relative magnitude of the losses')
