@@ -32,8 +32,8 @@ target = CylinderShape(g, [2], np.zeros(3), GOAL_R)
 # Time steps
 tau = np.arange(start=0, stop=T_MAX + 1e-5, step=T_STEP)
 
-# Dubins3D: minimize to reach goal
-system = Dubins3D(uMode="min")
+# Dubins3D: maximize to avoid target (matches DeepReach set_mode=avoid)
+system = Dubins3D(uMode="max")
 
 # BRT: once reachable, always reachable
 compMethods = {"TargetSetMode": "minVWithV0"}

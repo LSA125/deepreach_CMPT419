@@ -18,11 +18,11 @@
   "params": {
     "speed": 0.6,
     "omega_max": 1.1,
-    "goal_r": 0.2
+    "goal_r": 0.25
   },
   "t_max": 1.0,
   "t_step": 0.05,
-  "solve_time_s": 3.74,
+  "solve_time_s": 3.98,
   "peak_memory_mb": 20.44,
   "result_shape": [
     101,
