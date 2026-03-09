@@ -38,6 +38,29 @@ python baselines/optimized_dp/dubins3d_solve.py
 - `baselines/grids/dubins3d_grid.npy` — Dubins3D value function (101x101x101)
 - `baselines/grids/dubins3d_metadata.json` — params, timing, memory
 
+## Comparing against DeepReach
+
+`compare_values.py` supports two modes:
+
+**Mode A** — compare .npy vs .npy (no GPU needed):
+```bash
+conda activate odp
+python baselines/compare_values.py \
+  --baseline_grid baselines/grids/air3d_grid.npy \
+  --deepreach_grid path/to/deepreach_air3d_values.npy
+```
+
+**Mode B** — compare .npy vs .pth model (needs PyTorch):
+```bash
+conda activate deepreach
+python baselines/compare_values.py \
+  --baseline_grid baselines/grids/air3d_grid.npy \
+  --deepreach_model path/to/model_final.pth \
+  --dynamics air3d
+```
+
+Outputs to `baselines/plots/`: `slice_comparison.png` and `brt_overlap.png`.
+
 ## Parameters
 
 All shared parameters are in `baselines/config.py`. These match the DeepReach dynamics in `dynamics/dynamics.py`.
