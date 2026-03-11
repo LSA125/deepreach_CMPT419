@@ -1,1 +1,27 @@
-Plan: train and commit ML files, figure out how to share it, tune training values.
+# Scenario 1(3D Air3D Collision Avoidance):
+python run_experiment.py --mode train --experiment_class DeepReach \
+  --dynamics_class Air3D --experiment_name air3d_run --minWith target \
+  --collisionR 0.25 --velocity 0.75 --omega_max 3.0 --angle_alpha_factor 1.2 \
+  --pretrain --pretrain_iters 10000 \
+  --counter_start 10000 --counter_end 110000 --num_epochs 110000
+
+#Scenario 2(6D Two Vehicle Collision Avoidance):
+python run_experiment.py --mode train --experiment_class DeepReach \
+  --dynamics_class TwoVehicleCollision6D --experiment_name collision_6d_run --minWith target \
+  --collisionR 0.25 --velocity 0.75 --omega_max 3.0 --angle_alpha_factor 1.2 \
+  --pretrain --pretrain_iters 10000 \
+  --counter_start 10000 --counter_end 110000 --num_epochs 110000
+
+#Scenario 3 (9D Three Vehicle Collision Avoidance):
+python run_experiment.py --mode train --experiment_class DeepReach \
+  --dynamics_class MultiVehicleCollision9D --experiment_name collision_9d_run --minWith target \
+  --collisionR 0.25 --velocity 0.75 --omega_max 3.0 --angle_alpha_factor 1.2 \
+  --pretrain --pretrain_iters 60000 \
+  --counter_start 60000 --counter_end 160000 --num_epochs 160000
+
+Scenario 4 (10D Narrow Passage):
+python run_experiment.py --mode train --experiment_class DeepReach \
+  --dynamics_class NarrowPassage10D --experiment_name narrow_passage_10d_run --minWith target \
+  --speed 0.7 --steering_max 0.785 --obstacle_radius 0.15 --passage_width 0.5 \
+  --pretrain --pretrain_iters 60000 \
+  --counter_start 60000 --counter_end 160000 --num_epochs 160000
