@@ -1187,7 +1187,7 @@ class TwoVehicleCollision6D(Dynamics):
             loss_type='brt_hjivi', set_mode='avoid',
             state_dim=6, input_dim=7, control_dim=2, disturbance_dim=0,
             state_mean=[0, 0, 0, 0, 0, 0],
-            state_var=[1, 1, 1, 1, 1, self.angle_alpha_factor*math.pi],
+            state_var=[1, 1, 1, 1, self.angle_alpha_factor*math.pi, self.angle_alpha_factor*math.pi],
             value_mean=0.25,
             value_var=0.5,
             value_normto=0.02,
