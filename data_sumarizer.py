@@ -34,7 +34,7 @@ def extract_summary_data(log_dir):
 def process_all_experiments(base_runs_dir):
     # Mapping folders to their display names
     scenarios = {
-        #'air3d_run': 'Scenario 1 (3D)',
+        'air3d_run': 'Scenario 1 (3D)',
         'collision_6d_run': 'Scenario 2 (6D)',
         'collision_9d_run': 'Scenario 3 (9D)',
         'narrow_passage_10d_run': 'Scenario 4 (10D)'
@@ -63,7 +63,7 @@ def process_all_experiments(base_runs_dir):
                 'diff_constraint_hom': 'PDE Constraint (Gradient Accuracy)',
                 'dirichlet': 'Boundary (Dirichlet) Loss'
             }
-            # Find which of these actual headers exist in the dataframe
+            # Find which of these headers exist in the dataframe
             metrics_found = [m for m in metrics_mapping.keys() if m in df.columns]
             print(f"Metrics found for {name}: {metrics_found}")
 
