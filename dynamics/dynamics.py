@@ -1173,3 +1173,92 @@ class MultiVehicleCollision(Dynamics):
             'y_axis_idx': 1,
             'z_axis_idx': 6,
         }
+
+
+class TwoVehicleCollision6D(Dynamics):
+    """Collision dynamics for two vehicles (6D state: [x1,y1,x2,y2,theta1,theta2])."""
+
+    def __init__(self):
+        self.angle_alpha_factor = 1.2
+        self.velocity = 0.6
+        self.omega_max = 1.1
+        self.collisionR = 0.25
+        super().__init__(
+            loss_type='brt_hjivi', set_mode='avoid',
+            state_dim=6, input_dim=7, control_dim=2, disturbance_dim=0,
+            state_mean=[0, 0, 0, 0, 0, 0],
+            state_var=[1, 1, 1, 1, self.angle_alpha_factor*math.pi, self.angle_alpha_factor*math.pi],
+            value_mean=0.25,
+            value_var=0.5,
+            value_normto=0.02,
+            deepreach_model="exact",
+        )
+
+    def state_test_range(self):
+        return [
+            [-1, 1], [-1, 1],
+            [-1, 1], [-1, 1],
+            [-math.pi, math.pi], [-math.pi, math.pi],
+        ]
+
+    def equivalent_wrapped_state(self, state):
+        wrapped_state = torch.clone(state)
+        wrapped_state[..., 4] = (wrapped_state[..., 4] + math.pi) % (2*math.pi) - math.pi
+        wrapped_state[..., 5] = (wrapped_state[..., 5] + math.pi) % (2*math.pi) - math.pi
+        return wrapped_state
+
+    # dynamics (per car)
+    # \dot x    = v \cos \theta
+    # \dot y    = v \sin \theta
+    # \dot \theta = u
+    def dsdt(self, state, control, disturbance):
+        dsdt = torch.zeros_like(state)
+        dsdt[..., 0] = self.velocity*torch.cos(state[..., 4])
+        dsdt[..., 1] = self.velocity*torch.sin(state[..., 4])
+        dsdt[..., 2] = self.velocity*torch.cos(state[..., 5])
+        dsdt[..., 3] = self.velocity*torch.sin(state[..., 5])
+        dsdt[..., 4] = control[..., 0]
+        dsdt[..., 5] = control[..., 1]
+        return dsdt
+
+    def boundary_fn(self, state):
+        return torch.norm(state[..., 0:2] - state[..., 2:4], dim=-1) - self.collisionR
+
+    def sample_target_state(self, num_samples):
+        raise NotImplementedError
+
+    def cost_fn(self, state_traj):
+        return torch.min(self.boundary_fn(state_traj), dim=-1).values
+
+    def hamiltonian(self, state, dvds):
+        ham = self.velocity*(torch.cos(state[..., 4]) * dvds[..., 0] + torch.sin(state[..., 4]) * dvds[..., 1]) + self.omega_max * torch.abs(dvds[..., 4])
+        ham += self.velocity*(torch.cos(state[..., 5]) * dvds[..., 2] + torch.sin(state[..., 5]) * dvds[..., 3]) + self.omega_max * torch.abs(dvds[..., 5])
+        return ham
+
+    def optimal_control(self, state, dvds):
+        return self.omega_max*torch.sign(dvds[..., [4, 5]])
+
+    def optimal_disturbance(self, state, dvds):
+        return 0
+
+    def plot_config(self):
+        return {
+            'state_slices': [
+                0, 0,
+                0.5, 0,
+                -0.5, 0,
+            ],
+            'state_labels': [
+                r'$x_1$', r'$y_1$',
+                r'$x_2$', r'$y_2$',
+                r'$\theta_1$', r'$\theta_2$',
+            ],
+            'x_axis_idx': 0,
+            'y_axis_idx': 1,
+            'z_axis_idx': 4,
+        }
+
+
+class MultiVehicleCollision9D(MultiVehicleCollision):
+    """Alias for three-vehicle collision dynamics (9D state)."""
+    pass
