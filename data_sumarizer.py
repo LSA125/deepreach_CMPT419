@@ -31,11 +31,11 @@ def extract_summary_data(log_dir):
 
 def process_all_experiments(base_runs_dir):
     scenarios = {
-        'air3d_run': 'Scenario 1 (3D)',
+        #'air3d_run': 'Scenario 1 (3D)',
         'air3d_run_lr5': 'Scenario 1 (3D, LR=1e-5)',
-        'collision_6d_run': 'Scenario 2 (6D)',
-        'collision_9d_run': 'Scenario 3 (9D)',
-        'narrow_passage_10d_run': 'Scenario 4 (10D)'
+        #'collision_6d_run': 'Scenario 2 (6D)',
+        #'collision_9d_run': 'Scenario 3 (9D)',
+        #'narrow_passage_10d_run': 'Scenario 4 (10D)'
     }
     
     all_results = {}
