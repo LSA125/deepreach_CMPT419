@@ -27,8 +27,8 @@ python3 run_experiment.py --mode train --experiment_class DeepReach \
 
 Scenario 4 (10D Narrow Passage):
 python3 run_experiment.py --mode train --experiment_class DeepReach \
-  --dynamics_class NarrowPassage --experiment_name narrow_passage_10d_run --minWith target \
+  --dynamics_class NarrowPassage --experiment_name narrow_passage_10d_run_lr5 --minWith target \
   --avoid_fn_weight 0.5 --avoid_only False \
-  --lr 1e-4 \
+  --lr 1e-5 \
   --pretrain --pretrain_iters 60000 \
   --counter_start 60000 --counter_end 160000 --num_epochs 160000
