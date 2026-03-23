@@ -35,10 +35,10 @@ def process_all_experiments(base_runs_dir):
         #'air3d_run_lr5': 'Scenario 1 (3D, LR=1e-5)',
         #'collision_6d_run': 'Scenario 2 (6D)',
         #'collision_9d_run': 'Scenario 3 (9D)',
-        #'narrow_passage_10d_run': 'Scenario 4 (10D)'
-        #'narrow_passage_10d_run_lr5_hl4': 'Scenario 4 (10D)'
-        #'narrow_passage_10d_run_lr5_nl1024': 'Scenario 4 (10D)'
-        'narrow_passage_10d_run_lr5': 'Scenario 4 (10D)'
+        #'narrow_passage_10d_run': 'Scenario 4 (10D)',
+        #'narrow_passage_10d_run_lr5_hl4': 'Scenario 4 (10D)',
+        #'narrow_passage_10d_run_lr5_nl1024': 'Scenario 4 (10D)',
+        'narrow_passage_10d_run_lr5': 'Scenario 4 (10D)',
     }
     
     all_results = {}
