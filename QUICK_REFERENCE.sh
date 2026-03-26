@@ -302,7 +302,7 @@ Key Files:
   setup_environment.py        → Verify PyTorch/CUDA
   train_dubins3d.py          → Train models
   coordinate_normalizer.py   → Convert coordinates ROS ↔ network
-  TRAINING_AND_ROS_INTEGRATION_GUIDE.md → Full documentation
+  docs/TRAINING_AND_ROS_INTEGRATION_GUIDE.md → Full documentation
 
 Generated Models:
   ./runs/{experiment_name}/training/checkpoints/model_final.pth
@@ -325,6 +325,6 @@ Next Steps:
   4. Use in ROS with coordinate_normalizer.py
 
 Questions?
-  See: TRAINING_AND_ROS_INTEGRATION_GUIDE.md
+  See: docs/TRAINING_AND_ROS_INTEGRATION_GUIDE.md
   Or check code comments in train_dubins3d.py
 "
