@@ -22,7 +22,7 @@
   },
   "t_max": 1.0,
   "t_step": 0.05,
-  "solve_time_s": 22.68,
+  "solve_time_s": 23.52,
   "peak_memory_mb": 20.65,
   "result_shape": [
     101,

@@ -24,5 +24,11 @@ D_X_BOUNDS = (-1.0, 1.0)
 D_Y_BOUNDS = (-1.0, 1.0)
 D_THETA_BOUNDS = (-math.pi, math.pi)
 
+# TwoVehicleCollision6D params (collision avoidance, 6D)
+COLLISION6D_R = 0.25
+COLLISION6D_VELOCITY = 0.6
+COLLISION6D_OMEGA_MAX = 1.1
+
 # Grid resolution
 GRID_POINTS = 101
+GRID_POINTS_6D = 15  # coarse — 15^6 = 11.4M pts, the best we can do

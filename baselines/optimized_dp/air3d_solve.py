@@ -35,8 +35,8 @@ tau = np.arange(start=0, stop=T_MAX + 1e-5, step=T_STEP)
 # Air3D: evader maximizes (uMode=max), pursuer minimizes (dMode=min)
 system = Air3D(uMode="max", dMode="min")
 
-# BRS: value evolves freely, no clamping
-compMethods = {"TargetSetMode": "none"}
+# BRT: matches DeepReach minWith=target
+compMethods = {"TargetSetMode": "minVWithV0"}
 
 print(f"Solving Air3D BRS: {GRID_POINTS}^3 grid, T={T_MAX}, dt={T_STEP}")
 print(f"Params: speed={VELOCITY}, wMax={OMEGA_MAX}, beta={BETA}")

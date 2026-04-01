@@ -114,6 +114,113 @@ def compute_metrics(baseline, deepreach):
     }
 
 
+def compute_gradient_control_metrics(baseline, deepreach, dynamics_name, grid_bounds):
+    """
+    Compute gradient MSE and optimal control agreement rate.
+
+    Dubins3D (uMode='min'): u* = -wMax * sign(dV/dtheta)
+    Air3D    (uMode='max'): a = dV/dx*y - dV/dy*x - dV/dpsi
+                            u* = +wMax * sign(a)
+    """
+    N = baseline.shape[0]
+    spacings = [(b[1] - b[0]) / (N - 1) for b in grid_bounds]
+
+    dV_bl = np.gradient(baseline, *spacings)
+    dV_dr = np.gradient(deepreach, *spacings)
+
+    # Per-component gradient MSE, averaged across components
+    grad_mse = float(np.mean(
+        sum((dV_bl[i] - dV_dr[i]) ** 2 for i in range(3)) / 3
+    ))
+
+    if dynamics_name == 'dubins3d':
+        wMax = 1.1
+        ctrl_bl = -wMax * np.sign(dV_bl[2])
+        ctrl_dr = -wMax * np.sign(dV_dr[2])
+    elif dynamics_name == 'air3d':
+        wMax = 3.0
+        axes = [np.linspace(b[0], b[1], N) for b in grid_bounds]
+        X, Y, _ = np.meshgrid(*axes, indexing='ij')
+        a_bl = dV_bl[0] * Y - dV_bl[1] * X - dV_bl[2]
+        a_dr = dV_dr[0] * Y - dV_dr[1] * X - dV_dr[2]
+        ctrl_bl = wMax * np.sign(a_bl)
+        ctrl_dr = wMax * np.sign(a_dr)
+    else:
+        return None
+
+    # Agreement rate over non-zero (non-tie) points
+    valid = (ctrl_bl != 0) & (ctrl_dr != 0)
+    agreement = float(np.mean(ctrl_bl[valid] == ctrl_dr[valid]) * 100)
+
+    return {
+        "gradient_mse": grad_mse,
+        "control_agreement_pct": agreement,
+        "dV_baseline": dV_bl,
+        "dV_deepreach": dV_dr,
+        "ctrl_baseline": ctrl_bl,
+        "ctrl_deepreach": ctrl_dr,
+    }
+
+
+def plot_control_comparison(ctrl_metrics, bounds_x, bounds_y, slice_dim, slice_idx,
+                             slice_value, dynamics_name, output_dir):
+    """3-panel plot: baseline control | DeepReach control | disagreement map."""
+    ctrl_bl = ctrl_metrics['ctrl_baseline']
+    ctrl_dr = ctrl_metrics['ctrl_deepreach']
+
+    dim_labels = {
+        "air3d":    ["Relative X", "Relative Y", r"Relative Heading $\psi$"],
+        "dubins3d": ["X Position", "Y Position", r"Heading $\theta$"],
+    }
+    labels = dim_labels.get(dynamics_name, ["Dim 0", "Dim 1", "Dim 2"])
+
+    def _slice(arr):
+        if slice_dim == 2:
+            return arr[:, :, slice_idx], labels[0], labels[1], labels[2]
+        elif slice_dim == 1:
+            return arr[:, slice_idx, :], labels[0], labels[2], labels[1]
+        else:
+            return arr[slice_idx, :, :], labels[1], labels[2], labels[0]
+
+    bl_sl, xlabel, ylabel, slice_label = _slice(ctrl_bl)
+    dr_sl, _, _, _ = _slice(ctrl_dr)
+    disagree = (bl_sl != dr_sl).astype(float)
+    # mask tie points (both zero) as NaN so they appear neutral
+    tie_mask = (bl_sl == 0) & (dr_sl == 0)
+    disagree[tie_mask] = np.nan
+
+    agreement_pct = ctrl_metrics['control_agreement_pct']
+
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    fig.suptitle(
+        f"Optimal Control Comparison ({dynamics_name.upper()}, {slice_label} = {slice_value:.2f})\n"
+        f"Control agreement: {agreement_pct:.1f}%  |  Gradient MSE: {ctrl_metrics['gradient_mse']:.4f}",
+        fontsize=12
+    )
+
+    extent = [*bounds_x, *bounds_y]
+    for ax, data, title, cmap in zip(
+        axes,
+        [bl_sl.T, dr_sl.T, disagree.T],
+        ["Baseline control $u^*$", "DeepReach control $u^*$", "Disagreement (1 = differ)"],
+        ['RdBu', 'RdBu', 'Reds'],
+    ):
+        im = ax.imshow(data, origin='lower', extent=extent, cmap=cmap,
+                       vmin=-1 if cmap == 'RdBu' else 0,
+                       vmax=1 if cmap == 'RdBu' else 1)
+        ax.set_title(title, fontsize=10)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        fig.colorbar(im, ax=ax, shrink=0.8)
+
+    fig.tight_layout()
+    os.makedirs(output_dir, exist_ok=True)
+    out_path = os.path.join(output_dir, 'control_comparison.png')
+    fig.savefig(out_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"Saved: {out_path}")
+
+
 def plot_slice_comparison(baseline, deepreach, bounds_x, bounds_y, slice_dim, slice_idx, slice_value, dynamics_name, output_dir):
     """3-panel heatmap: baseline | deepreach | absolute error at a fixed slice."""
     dim_labels = {
@@ -285,7 +392,6 @@ def main():
     slice_idx = args.slice_idx if args.slice_idx is not None else baseline.shape[args.slice_dim] // 2
     bounds_x = (-1.0, 1.0)
     bounds_y = (-1.0, 1.0)
-    # Compute the actual value at the slice index
     import math
     if args.slice_dim == 2:
         slice_value = np.linspace(-math.pi, math.pi, baseline.shape[2])[slice_idx]
@@ -295,6 +401,20 @@ def main():
 
     plot_slice_comparison(baseline, deepreach, bounds_x, bounds_y, args.slice_dim, slice_idx, slice_value, dynamics_name, args.output_dir)
     plot_brt_overlay(baseline, deepreach, bounds_x, bounds_y, args.slice_dim, slice_idx, slice_value, dynamics_name, metrics, args.output_dir)
+
+    # Gradient / control metrics (Dubins3D and Air3D only)
+    if dynamics_name in ('dubins3d', 'air3d'):
+        if dynamics_name == 'air3d':
+            grid_bounds = [(-1.0, 1.0), (-1.0, 1.0), (-math.pi, math.pi)]
+        else:
+            grid_bounds = [(-1.0, 1.0), (-1.0, 1.0), (-math.pi, math.pi)]
+
+        ctrl_metrics = compute_gradient_control_metrics(baseline, deepreach, dynamics_name, grid_bounds)
+        if ctrl_metrics is not None:
+            print(f"Gradient MSE: {ctrl_metrics['gradient_mse']:.6e}")
+            print(f"Control agreement: {ctrl_metrics['control_agreement_pct']:.2f}%")
+            plot_control_comparison(ctrl_metrics, bounds_x, bounds_y, args.slice_dim, slice_idx,
+                                    slice_value, dynamics_name, args.output_dir)
 
 
 if __name__ == "__main__":
