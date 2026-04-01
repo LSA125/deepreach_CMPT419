@@ -5,11 +5,11 @@ source env/bin/activate
 
 # Scenario 1(3D Air3D Collision Avoidance):
 python3 run_experiment.py --mode train --experiment_class DeepReach \
-  --dynamics_class Air3D --experiment_name air3d_run --minWith target \
+  --dynamics_class Air3D --experiment_name air3d_run_lr5 --minWith target \
   --collisionR 0.25 --velocity 0.75 --omega_max 3.0 --angle_alpha_factor 1.2 \
-  --lr 1e-4 \
+  --lr 1e-5 \
   --pretrain --pretrain_iters 10000 \
-  --counter_start 10000 --counter_end 110000 --num_epochs 110000
+  --counter_start 20000 --counter_end 120000 --num_epochs 120000
 
 #Scenario 2(6D Two Vehicle Collision Avoidance):
 python3 run_experiment.py --mode train --experiment_class DeepReach \
@@ -27,8 +27,8 @@ python3 run_experiment.py --mode train --experiment_class DeepReach \
 
 Scenario 4 (10D Narrow Passage):
 python3 run_experiment.py --mode train --experiment_class DeepReach \
-  --dynamics_class NarrowPassage --experiment_name narrow_passage_10d_run --minWith target \
+  --dynamics_class NarrowPassage --experiment_name narrow_passage_10d_run_lr5 --minWith target \
   --avoid_fn_weight 0.5 --avoid_only False \
-  --lr 1e-4 \
+  --lr 1e-5 \
   --pretrain --pretrain_iters 60000 \
   --counter_start 60000 --counter_end 160000 --num_epochs 160000
