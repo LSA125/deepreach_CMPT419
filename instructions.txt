@@ -32,3 +32,10 @@ python3 run_experiment.py --mode train --experiment_class DeepReach \
   --lr 1e-5 \
   --pretrain --pretrain_iters 60000 \
   --counter_start 60000 --counter_end 160000 --num_epochs 160000
+
+  python3 run_experiment.py --mode train --experiment_class DeepReach \
+  --dynamics_class NarrowPassage --experiment_name np_working_v1 --minWith target \
+  --lr 5e-5 --avoid_fn_weight 0.5 --avoid_only False \
+  --tMax 10.0 \
+  --pretrain --pretrain_iters 10000 \
+  --counter_start 10000 --counter_end 80000 --num_epochs 100000

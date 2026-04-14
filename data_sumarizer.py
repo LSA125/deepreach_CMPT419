@@ -31,6 +31,7 @@ def extract_summary_data(log_dir):
 
 def process_all_experiments(base_runs_dir):
     scenarios = {
+        'dubins3d_tutorial_run': 'Scenario 0 (3D)',
         #'air3d_run': 'Scenario 1 (3D)',
         #'air3d_run_lr5': 'Scenario 1 (3D, LR=1e-5)',
         #'collision_6d_run': 'Scenario 2 (6D)',
@@ -38,7 +39,8 @@ def process_all_experiments(base_runs_dir):
         #'narrow_passage_10d_run': 'Scenario 4 (10D)',
         #'narrow_passage_10d_run_lr5_hl4': 'Scenario 4 (10D)',
         #'narrow_passage_10d_run_lr5_nl1024': 'Scenario 4 (10D)',
-        'narrow_passage_10d_run_lr5': 'Scenario 4 (10D)',
+        #'narrow_passage_10d_run_lr5': 'Scenario 4 (10D)',
+        'np_working_v1': 'Scenario 4 (10D)',
     }
     
     all_results = {}

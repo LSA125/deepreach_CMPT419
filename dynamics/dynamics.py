@@ -427,7 +427,7 @@ class Dubins4D(Dynamics):
 
 class NarrowPassage(Dynamics):
     def __init__(self, avoid_fn_weight:float, avoid_only:bool):
-        self.L = 2.0
+        self.L = 0.8
 
         # # Target positions
         self.goalX = [6.0, -6.0]

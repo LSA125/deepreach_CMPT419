@@ -32,6 +32,149 @@ except ImportError as e:
     print(f"Warning: Could not import hj_reachability: {e}")
     HJ_AVAILABLE = False
 
+class Air3DComparisonConfig:
+    """Configuration for your specific Air3D (lr5 scenario) comparison."""
+    def __init__(
+        self,
+        collision_radius: float = 0.25,
+        velocity: float = 0.5,
+        omega_max: float = 1.0,
+        angle_alpha_factor: float = 1.0,
+        domain_bounds: Optional[list] = None,
+        resolution: int = 50,
+        time_horizon: float = 1.0,
+        num_time_steps: int = 11,
+    ):
+        self.collision_radius = collision_radius
+        self.velocity = velocity
+        self.omega_max = omega_max
+        self.angle_alpha_factor = angle_alpha_factor
+        self.domain_bounds = domain_bounds or [[-1.5, 1.5], [-1.5, 1.5], [-np.pi, np.pi]]
+        self.resolution = resolution
+        self.time_horizon = time_horizon
+        self.num_time_steps = num_time_steps
+
+class Air3DComparisonRunner:
+    def __init__(self, config: Air3DComparisonConfig, device: str = "cpu"):
+        self.config = config
+        self.device = device
+        
+        # Initialize your custom DeepReach dynamics
+        # Note: Importing your specific Air3D class here
+        from dynamics.dynamics import Air3D as DeepReachAir3D
+        self.dr_dynamics = DeepReachAir3D(
+            collisionR=config.collision_radius,
+            velocity=config.velocity,
+            omega_max=config.omega_max,
+            angle_alpha_factor=config.angle_alpha_factor
+        )
+
+        if HJ_AVAILABLE:
+            # hj_reachability Air3d dynamics
+            # evader_speed, pursuer_speed, evader_turn, pursuer_turn
+            self.hj_system = air3d.Air3d(
+                evader_speed=config.velocity,
+                pursuer_speed=config.velocity,
+                evader_max_turn_rate=config.omega_max,
+                pursuer_max_turn_rate=config.omega_max
+            )
+            
+            # Setup periodic grid for HJ
+            domain_lo = np.array([config.domain_bounds[0][0], config.domain_bounds[1][0], 0.0])
+            domain_hi = np.array([config.domain_bounds[0][1], config.domain_bounds[1][1], 2 * np.pi])
+            self.hj_grid = hj_grid.Grid.from_lattice_parameters_and_boundary_conditions(
+                domain=hj_sets.Box(lo=domain_lo, hi=domain_hi),
+                shape=(config.resolution,) * 3,
+                periodic_dims=(2,)
+            )
+
+    def compute_ground_truth(self):
+        # Boundary function: norm(x,y) - R
+        boundary_vals = np.linalg.norm(self.hj_grid.states[..., :2], axis=-1) - self.config.collision_radius
+        
+        times = np.linspace(0, self.config.time_horizon, self.config.num_time_steps)
+        
+        # Air3D lr5 is usually a BRT (Avoid set)
+        settings = hj_solver.SolverSettings.with_accuracy("high")
+        settings = settings.replace(
+            hamiltonian_postprocessor=hj_solver.backwards_reachable_tube
+        )
+        
+        start = time.time()
+        values = hj_solver.solve(settings, self.hj_system, self.hj_grid, -times, boundary_vals)
+        return np.array(values)[::-1], time.time() - start
+
+    def evaluate_deepreach(self, model):
+        """Evaluate DeepReach over the HJ grid states, mapping theta back to [-pi, pi]."""
+        hj_states = self.hj_grid.states.reshape(-1, 3) # [x, y, theta_hj]
+        
+        # Map HJ theta [0, 2pi] back to DR theta [-pi, pi]
+        dr_theta = (hj_states[:, 2] + np.pi) % (2 * np.pi) - np.pi
+        dr_states = np.stack([hj_states[:, 0], hj_states[:, 1], dr_theta], axis=-1)
+        
+        # We'll evaluate at the final time horizon (t=1.0 usually)
+        t_vec = np.full((dr_states.shape[0], 1), self.config.time_horizon)
+        coords = torch.from_numpy(np.hstack([t_vec, dr_states])).float().to(self.device)
+        
+        model.eval()
+        start = time.time()
+        with torch.no_grad():
+            inputs = self.dr_dynamics.coord_to_input(coords)
+            model_out = model({'coords': inputs})['model_out'][..., 0]
+            values = self.dr_dynamics.io_to_value(inputs, model_out)
+        
+        return values.cpu().numpy().reshape(self.hj_grid.shape), time.time() - start
+    
+    def run(self, model: torch.nn.Module, output_dir: Optional[Path] = None) -> Dict:
+        """Runs the full evaluation pipeline for Air3D."""
+        print("\n" + "=" * 50)
+        print("Starting Air3D Comparison (DeepReach vs HJ)")
+        print("=" * 50)
+
+        # 1. Compute HJ Ground Truth
+        print("[1/3] Solving ground truth via hj_reachability...")
+        gt_values, gt_time = self.compute_ground_truth()
+        print(f"      Solve complete in {gt_time:.2f}s")
+
+        # 2. Evaluate DeepReach
+        print("[2/3] Evaluating DeepReach model at time horizon...")
+        pred_values, pred_time = self.evaluate_deepreach(model)
+        print(f"      Evaluation complete in {pred_time:.2f}s")
+
+        # 3. Compute Metrics
+        print("[3/3] Computing performance metrics...")
+        mse = np.mean((gt_values - pred_values) ** 2)
+        
+        # BRT Volume (V <= 0)
+        gt_mask = (gt_values <= 0).astype(float)
+        pred_mask = (pred_values <= 0).astype(float)
+        
+        # Calculate Intersection over Union (IoU) for the safety set
+        intersection = np.logical_and(gt_mask, pred_mask).sum()
+        union = np.logical_or(gt_mask, pred_mask).sum()
+        iou = intersection / union if union > 0 else 1.0
+
+        results = {
+            "metrics": {
+                "mse": float(mse),
+                "iou": float(iou),
+                "gt_volume": int(gt_mask.sum()),
+                "pred_volume": int(pred_mask.sum())
+            },
+            "timing": {
+                "hj_solve_time": gt_time,
+                "dr_eval_time": pred_time
+            }
+        }
+
+        if output_dir:
+            out_path = Path(output_dir) / "air3d_comparison.json"
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(out_path, 'w') as f:
+                json.dump(results, f, indent=4)
+            print(f"Results saved to {out_path}")
+
+        return results
 
 class DubinsComparisonConfig:
     """Configuration for Dubins3D vs DubinsCarCAvoid comparison."""
@@ -417,19 +560,18 @@ def main():
     model.eval()
 
     # Setup config
-    config = DubinsComparisonConfig(
-        goal_radius=0.2,
-        velocity=0.6,
-        omega_max=1.1,
-        angle_alpha_factor=1.2,
+    config = Air3DComparisonConfig(
+        collision_radius=0.25, # Matches your Air3D dynamics.collisionR
+        velocity=0.5,          # Matches your Air3D lr5 speed
+        omega_max=1.0,         # Matches your Air3D max turn rate
+        angle_alpha_factor=1.0,
         resolution=args.resolution,
         time_horizon=args.time_horizon,
         num_time_steps=11,
-        set_mode="reach",
     )
     
     # Run comparison
-    runner = DubinsComparisonRunner(config, device=args.device)
+    runner = Air3DComparisonRunner(config, device=args.device)
     results = runner.run(model, output_dir=args.output_dir)
     
     print("\nComparison complete!")
