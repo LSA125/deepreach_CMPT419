@@ -101,7 +101,6 @@ if (mode == 'all') or (mode == 'train'):
     dynamics_params = {name: param for name, param in inspect.signature(dynamics_class).parameters.items() if name != 'self'}
     for param in dynamics_params.keys():
         if dynamics_params[param].annotation is bool:
-            # For boolean flags: use action='store_true' (--flag sets True) or --flag=False for False
             p.add_argument('--' + param, type=lambda x: x.lower() in ('true', '1', 'yes'), default=False, help='special dynamics_class argument')
         else:
             p.add_argument('--' + param, type=dynamics_params[param].annotation, required=True, help='special dynamics_class argument')

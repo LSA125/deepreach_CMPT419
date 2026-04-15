@@ -74,45 +74,34 @@ def load_experiment(experiment_dir: str, device: str = 'cuda:0'):
     return dynamics, model
 
 
-def get_optimal_control(model, dynamics, t, state, device='cuda:0', verbose=False):
-    # 1. Create the raw coordinate tensor and enable grad
-    # [Time, x1, y1, th1, v1, phi1, x2, y2, th2, v2, phi2]
+def get_optimal_control(model, dynamics, t, state, device='cuda:0'):
+    # 1. Prepare coordinates [1, 11] (time + 10D state)
     coords = torch.tensor(np.append([t], state), dtype=torch.float32, device=device).unsqueeze(0)
     coords.requires_grad_(True)
     
-    # 2. Pass through dynamics normalization AND model
+    # 2. Convert to model input units
     model_in = dynamics.coord_to_input(coords)
-    model_out = model({'coords': model_in})
-    value = model_out['model_out'] # Raw value from model
     
-    # 3. Direct gradient: dV / dcoords
-    # This automatically handles the chain rule through coord_to_input
-    dv_dall = torch.autograd.grad(
-        value, coords, 
-        grad_outputs=torch.ones_like(value),
-        allow_unused=True
-    )[0]
+    # 3. Get model output
+    model_out = model({'coords': model_in})['model_out']
     
-    if dv_dall is None:
-        return np.zeros(dynamics.control_dim)
-
-    # 4. DeepReach "Diff" mode adjustment
-    # If the model was trained with the 'diff' architecture, we add the boundary gradient
-    if dynamics.deepreach_model == "diff":
-        # We need d(Boundary)/d(state)
-        state_only = coords[:, 1:].detach().requires_grad_(True)
-        boundary_val = dynamics.boundary_fn(state_only)
-        d_boundary = torch.autograd.grad(boundary_val, state_only, torch.ones_like(boundary_val))[0]
-        
-        # Combine: Learned Gradient + Analytical Boundary Gradient
-        # Note: Index 0 of dv_dall is time, so we add to index 1+
-        dv_dall[:, 1:] += d_boundary
-
-    # 5. Get optimal control from the dynamics class
-    # We pass the full gradient vector [dV/dt, dV/dx1, ...]
-    control = dynamics.optimal_control(coords.detach(), dv_dall.detach())
+    # 4. Use the patched Dynamics class to calculate gradients
+    # This now works because of your fix in utils/diff_operators.py
+    dv_dall = dynamics.io_to_dv(model_in, model_out)
     
-    return control.squeeze(0).cpu().numpy()
+    # 5. Extract spatial gradients [1, 10]
+    # Ensure we don't accidentally squeeze the batch dimension
+    dv_ds = dv_dall[..., 1:]
+    
+    # 6. Compute optimal control
+    # state_tensor should be [1, 10], dv_ds should be [1, 10]
+    state_tensor = coords[..., 1:].detach()
+    control = dynamics.optimal_control(state_tensor, dv_ds.detach())
+    
+    # 7. Convert to numpy and flatten to 1D array of size 4
+    u = control.detach().cpu().numpy().flatten()
+    
+    return u
 
 
 def get_simple_control(dynamics, state, goal):
@@ -135,60 +124,44 @@ def get_simple_control(dynamics, state, goal):
     return np.array([a, psi, a, psi])  # Same for both cars
 
 
-def rollout_trajectory(model, dynamics, initial_state, T=1.0, dt=0.025, device='cuda:0', verbose=False):
-    """Roll out trajectory using learned optimal control from value function."""
+def rollout_trajectory(model, dynamics, initial_state, T_sim=8.0, dt=0.05, device='cuda:0'):
     state = np.array(initial_state, dtype=np.float32)
     trajectory = [state.copy()]
+    num_steps = int(T_sim / dt)
     
-    num_steps = int(T / dt)
-    
+    # Since the value function is trained up to tMax (1.0), 
+    # we keep the time input at 1.0 to use the "steady state" safety policy.
+    t_fixed = 1.0 
+
     for step in range(num_steps):
-        t = T - step * dt
+        # Use optimal policy
+        u = get_optimal_control(model, dynamics, t_fixed, state, device=device)
         
-        try:
-            # Get optimal control from learned value function
-            control = get_optimal_control(model, dynamics, t, state, device=device, verbose=False)
-        except Exception as e:
-            if verbose:
-                print(f"  Control computation failed at step {step}: {e}")
-            return np.array(trajectory), False
+        # Clip controls based on your class bounds
+        u[0] = np.clip(u[0], dynamics.aMin, dynamics.aMax)
+        u[1] = np.clip(u[1], dynamics.psiMin, dynamics.psiMax)
+        u[2] = np.clip(u[2], dynamics.aMin, dynamics.aMax)
+        u[3] = np.clip(u[3], dynamics.psiMin, dynamics.psiMax)
         
-        # Clamp control to bounds
-        control[0] = np.clip(control[0], dynamics.aMin, dynamics.aMax)
-        control[1] = np.clip(control[1], dynamics.psiMin, dynamics.psiMax)
-        control[2] = np.clip(control[2], dynamics.aMin, dynamics.aMax)
-        control[3] = np.clip(control[3], dynamics.psiMin, dynamics.psiMax)
+        # RK1 Integration
+        s_t = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+        u_t = torch.tensor(u, dtype=torch.float32, device=device).unsqueeze(0)
+        d_t = torch.zeros((1, 0), device=device) # No disturbance in this model
         
-        # Integrate dynamics
-        state_tensor = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
-        control_tensor = torch.tensor(control, dtype=torch.float32, device=device).unsqueeze(0)
-        disturbance_tensor = torch.zeros((1, 0), device=device)
+        ds = dynamics.dsdt(s_t, u_t, d_t).squeeze(0).detach().cpu().numpy()
+        state = state + dt * ds
         
-        dsdt = dynamics.dsdt(state_tensor, control_tensor, disturbance_tensor).squeeze(0)
-        state = state + dt * dsdt.detach().cpu().numpy()
-        
-        # Wrap angles
+        # Angle Wrapping (Essential for theta and phi)
         state = dynamics.equivalent_wrapped_state(torch.tensor(state).unsqueeze(0)).squeeze(0).numpy()
         trajectory.append(state.copy())
         
-        # Check collision
-        state_t = torch.tensor(state).unsqueeze(0)
-        avoid_val = dynamics.avoid_fn(state_t).item()
-        if avoid_val < -0.1:
-            if verbose:
-                # Debug: show which component failed
-                dist_lc_R1 = state[1] - dynamics.curb_positions[0] - 0.5*dynamics.L
-                dist_lc_R2 = state[6] - dynamics.curb_positions[0] - 0.5*dynamics.L
-                dist_uc_R1 = dynamics.curb_positions[1] - state[1] - 0.5*dynamics.L
-                dist_uc_R2 = dynamics.curb_positions[1] - state[6] - 0.5*dynamics.L
-                dist_R1R2 = np.linalg.norm(state[0:2] - state[5:7]) - dynamics.L
-                print(f"  COLLISION at step {step}: avoid_fn = {avoid_val:.4f}")
-                print(f"    dist_R1R2 (car-to-car) = {dist_R1R2:.4f}")
-                print(f"    Car1 y={state[1]:.2f}, Car2 y={state[6]:.2f}")
-            return np.array(trajectory), False
-    
-    trajectory = np.array(trajectory)
-    return trajectory, True
+        # Check if both cars reached goal (within 0.6m)
+        dist1 = np.linalg.norm(state[0:2] - np.array([dynamics.goalX[0], dynamics.goalY[0]]))
+        dist2 = np.linalg.norm(state[5:7] - np.array([dynamics.goalX[1], dynamics.goalY[1]]))
+        if dist1 < 0.6 and dist2 < 0.6:
+            return np.array(trajectory), True
+            
+    return np.array(trajectory), False
 
 
 def visualize_scenario(model, dynamics, device='cuda:0'):
@@ -241,7 +214,7 @@ def visualize_scenario(model, dynamics, device='cuda:0'):
     print(f"  Car 2: starts ({initial_state[5]:.1f}, {initial_state[6]:.1f}) → goal ({dynamics.goalX[1]}, {dynamics.goalY[1]})")
     
     # Rollout with learned optimal control policy
-    trajectory, success = rollout_trajectory(model, dynamics, initial_state, T=1.0, dt=0.025, device=device, verbose=True)
+    trajectory, success = rollout_trajectory(model, dynamics, initial_state, T_sim=1.0, dt=0.025, device=device)
     
     print(f"  Result: {'✓ SUCCESS' if success else '✗ FAILURE'}")
     

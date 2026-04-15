@@ -11,6 +11,13 @@ python3 run_experiment.py --mode train --experiment_class DeepReach \
   --pretrain --pretrain_iters 10000 \
   --counter_start 20000 --counter_end 120000 --num_epochs 120000
 
+python3 run_experiment.py --mode train --experiment_class DeepReach \
+  --dynamics_class Air3D --experiment_name air3d_run_normtrain --minWith target \
+  --collisionR 0.25 --velocity 0.75 --omega_max 3.0 --angle_alpha_factor 1.2 \
+  --lr 1e-4 \
+  --pretrain --pretrain_iters 10000 \
+  --counter_start 10000 --counter_end 30000 --num_epochs 60000
+
 #Scenario 2(6D Two Vehicle Collision Avoidance):
 python3 run_experiment.py --mode train --experiment_class DeepReach \
   --dynamics_class TwoVehicleCollision6D --experiment_name collision_6d_run --minWith target \

@@ -17,37 +17,48 @@ from utils.modules import SingleBVPNet
 
 
 def check_value_gradient(model, dynamics, device='cuda:0'):
-    # Sweep X for the relative position (e.g., from -3 to 3 units away)
-    x_sweep = np.linspace(-3, 3, 100)
+    # Sweep relative X position from -2 to 2
+    # In Air3D, (0,0) is the collision point (the location of the other aircraft)
+    x_sweep = np.linspace(-2, 2, 100)
     values = []
     
-    # Use train() mode to ensure the model behaves exactly as it did during training
     model.train() 
     
+    # Fixed relative slice parameters
+    rel_y = 0.2     # Pursuer is slightly "above" evader in relative Y
+    rel_psi = 0.0   # Relative heading is aligned (facing each other or same way)
+
     with torch.no_grad():
         for x in x_sweep:
-            # FIX: Use a 3D state [relative_x, relative_y, relative_theta]
-            # matching your Air3D / Dubins3D model's expected 4D input (1+3)
-            state = np.array([x, 0.2, 0.0], dtype=np.float32) 
+            # Construct 3D State: [rel_x, rel_y, rel_psi]
+            state = np.array([x, rel_y, rel_psi], dtype=np.float32) 
             
-            t_tensor = torch.tensor([[1.0]], device=device) 
+            # Construct 4D Input: [Time, rel_x, rel_y, rel_psi]
+            t_tensor = torch.tensor([[1.0]], device=device) # Look at t=1.0
             s_tensor = torch.tensor(state, device=device).unsqueeze(0)
-            
-            # coords becomes [1, 4] -> [Time, X, Y, Theta]
             coords = torch.cat([t_tensor, s_tensor], dim=1)
             
+            # Apply DeepReach coordinate transformation
             model_in = dynamics.coord_to_input(coords)
             model_out = model({'coords': model_in})
-            val = model_out['model_out']
+            
+            # Map normalized output back to actual Value (distance-to-collision)
+            val = dynamics.io_to_value(model_in, model_out['model_out'])
             values.append(val.item())
     
-    # Plotting the slice
     plt.figure(figsize=(10, 5))
-    plt.plot(x_sweep, values, label='Value V(t, s)', color='blue', linewidth=2)
-    plt.axhline(y=0, color='black', linestyle='-', alpha=0.3)
-    plt.axvline(x=0, color='red', linestyle='--', label='Pursuer/Target Center')
+    plt.plot(x_sweep, values, label='Value V(t, s)', color='crimson', linewidth=2)
     
-    plt.title(f"Air3D Value Slice (t=1.0, y=0.2, th=0.0)")
+    # Air3D Specific Markers
+    plt.axhline(y=0, color='black', linestyle='-', alpha=0.3)
+    plt.axvline(x=0, color='blue', linestyle='--', label='Evader (Origin)')
+    
+    # Highlight the Collision Cylinder (Collision Radius)
+    plt.fill_between(x_sweep, -0.05, 0.05, 
+                     where=(np.sqrt(x_sweep**2 + rel_y**2) < dynamics.collisionR),
+                     color='red', alpha=0.2, label='Inside CollisionR')
+
+    plt.title(f"Air3D Relative Value Slice (t=1.0, rel_y={rel_y}, rel_psi={rel_psi})")
     plt.xlabel("Relative X Position")
     plt.ylabel("Value (V > 0 is Safe)")
     plt.grid(True, which='both', alpha=0.3)
@@ -55,10 +66,10 @@ def check_value_gradient(model, dynamics, device='cuda:0'):
     
     output_dir = Path('brt_vol_err_results')
     output_dir.mkdir(exist_ok=True)
-    output_file = output_dir / f'air3d_gradient_check_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png'
+    output_file = output_dir / f'air3d_sweep_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png'
     plt.tight_layout()
     plt.savefig(output_file, dpi=150)
-    print(f"[+] Gradient sweep saved to {output_file}")
+    print(f"[+] Air3D sweep saved to {output_file}")
     
 
 def load_experiment(experiment_dir: str, device: str = 'cuda:0'):
