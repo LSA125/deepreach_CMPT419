@@ -29,18 +29,19 @@ PERIODIC_DIMS = [4, 5]  # theta1, theta2 are periodic
 
 
 def compute_target_set(g):
-    """Collision region: ||[x1,y1] - [x2,y2]|| - collisionR <= 0"""
-    # Build meshgrid from the grid object
-    # g.grid_points gives the 1D arrays for each dimension
-    coords = np.meshgrid(
-        g.grid_points[0], g.grid_points[1], g.grid_points[2],
-        g.grid_points[3], g.grid_points[4], g.grid_points[5],
-        indexing='ij'
-    )
-    dx = coords[0] - coords[2]  # x1 - x2
-    dy = coords[1] - coords[3]  # y1 - y2
-    target = np.sqrt(dx**2 + dy**2) - COLLISION_R
-    return target
+    """Collision region: ||[x1,y1] - [x2,y2]|| - collisionR <= 0
+    Uses broadcasting — target only depends on x1,y1,x2,y2 (not theta1/theta2).
+    Avoids allocating 6 full N^6 meshgrid arrays (would be ~12GB at 25pt)."""
+    N = g.grid_points[0].shape[0]
+    x1 = g.grid_points[0].astype(np.float32).reshape(-1, 1, 1, 1, 1, 1)
+    y1 = g.grid_points[1].astype(np.float32).reshape( 1,-1, 1, 1, 1, 1)
+    x2 = g.grid_points[2].astype(np.float32).reshape( 1, 1,-1, 1, 1, 1)
+    y2 = g.grid_points[3].astype(np.float32).reshape( 1, 1, 1,-1, 1, 1)
+    dx = x1 - x2  # shape (N,N,N,N,1,1)
+    dy = y1 - y2  # shape (N,N,N,N,1,1)
+    # (N,N,N,N,1,1) — theta dims are independent, broadcast_to avoids copying until .copy()
+    target_4d = (np.sqrt(dx**2 + dy**2) - COLLISION_R).astype(np.float32)
+    return np.broadcast_to(target_4d, (N, N, N, N, N, N)).copy()
 
 
 def main():
@@ -57,14 +58,14 @@ def main():
     print(f"6D TwoVehicleCollision BRT Solve")
     print(f"=" * 60)
     print(f"Grid: {N}^6 = {total_points:,} points")
-    print(f"Estimated array size: {total_points * 8 / 1e9:.2f} GB (float64)")
+    print(f"Estimated array size: {total_points * 4 / 1e9:.2f} GB (float32, odp uses Float(32) internally)")
     print(f"Params: velocity={VELOCITY}, omega_max={OMEGA_MAX}, collisionR={COLLISION_R}")
     print(f"T_MAX={T_MAX}, T_STEP={T_STEP}")
     print()
 
-    if total_points > 5e8:
+    if total_points > 2e9:
         print(f"WARNING: {total_points:,} points will likely exceed available memory.")
-        print("Consider using --grid_points 15 or 11.")
+        print("Consider using --grid_points <= 31.")
         return
 
     # Build 6D grid with periodic theta dimensions

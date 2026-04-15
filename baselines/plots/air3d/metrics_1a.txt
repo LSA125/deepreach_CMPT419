@@ -1,0 +1,14 @@
+=== Air3D lr5 — Phase 1 Metrics ===
+
+raw_mse                 = 2.400425e-02
+raw_brt_vol_error_pct   = 3.5077
+norm_mse                = 4.891572e-02
+norm_brt_vol_error_pct  = 200.0000
+control_agreement_pct   = 75.1704
+
+Per-angle BRT volume error:
+  psi=     0  (+0.000 rad)  vol_err=4.01%  bl=524  dr=503
+  psi=    45  (+0.785 rad)  vol_err=2.34%  bl=684  dr=682
+  psi=    90  (+1.571 rad)  vol_err=1.74%  bl=860  dr=865
+  psi=   180  (+3.142 rad)  vol_err=12.55%  bl=1195  dr=1287
+  psi= neg90  (-1.571 rad)  vol_err=1.27%  bl=869  dr=864
