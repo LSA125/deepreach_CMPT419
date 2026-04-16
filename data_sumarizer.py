@@ -31,17 +31,17 @@ def extract_summary_data(log_dir):
 
 def process_all_experiments(base_runs_dir):
     scenarios = {
-        #'dubins3d_tutorial_run': 'Scenario 0 (3D)',
-        #'air3d_run': 'Scenario 1 (3D)',
-        #'air3d_run_lr5': 'Scenario 1 (3D, LR=1e-5)',
+        'dubins3d_tutorial_run': 'Scenario 0 (3D)',
+        'air3d_run': 'Scenario 1 (3D)',
+        'air3d_run_lr5': 'Scenario 1 (3D, LR=1e-5)',
         'air3d_run_normtrain': 'Scenario 1 (3D, Less pretraining and curriculum training)',
-        #'collision_6d_run': 'Scenario 2 (6D)',
-        #'collision_9d_run': 'Scenario 3 (9D)',
-        #'narrow_passage_10d_run': 'Scenario 4 (10D)',
-        #'narrow_passage_10d_run_lr5_hl4': 'Scenario 4 (10D)',
-        #'narrow_passage_10d_run_lr5_nl1024': 'Scenario 4 (10D)',
-        #'narrow_passage_10d_run_lr5': 'Scenario 4 (10D)',
-        #'np_working_v1': 'Scenario 4 (10D)',
+        'collision_6d_run': 'Scenario 2 (6D)',
+        'collision_9d_run': 'Scenario 3 (9D)',
+        'narrow_passage_10d_run': 'Scenario 4 (10D)',
+        'narrow_passage_10d_run_lr5_hl4': 'Scenario 4 (10D)',
+        'narrow_passage_10d_run_lr5_nl1024': 'Scenario 4 (10D)',
+        'narrow_passage_10d_run_lr5': 'Scenario 4 (10D)',
+        'np_working_v1': 'Scenario 4 (10D)',
     }
     
     all_results = {}
@@ -69,6 +69,13 @@ def process_all_experiments(base_runs_dir):
             }
             
             metrics_found = [m for m in metrics_mapping.keys() if m in df.columns]
+            
+            print(f"Final Benchmarks for {name}:")
+            for metric, label in metrics_mapping.items():
+                if metric in df.columns:
+                    # Get the last non-NaN value for the metric
+                    final_val = df[metric].dropna().iloc[-1]
+                    print(f"  > {label}: {final_val:.6e}")
 
             for metric in metrics_found:
                 plt.figure(figsize=(12, 6))
