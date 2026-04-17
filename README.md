@@ -1,7 +1,7 @@
 # DeepReach: A Deep Learning Approach to High-Dimensional Reachability
-### [Project Page](http://people.eecs.berkeley.edu/~somil/index.html) | [Paper](https://arxiv.org/pdf/2011.02082.pdf)<br>
+### [Original Project Page](http://people.eecs.berkeley.edu/~somil/index.html) | [Original Paper](https://arxiv.org/pdf/2011.02082.pdf)<br>
 
-Repository Maintainers<br>
+Original Repository Maintainers<br>
 [Albert Lin](https://www.linkedin.com/in/albertkuilin/),
 [Zeyuan Feng](https://thezeyuanfeng.github.io/),
 [Javier Borquez](https://javierborquez.github.io/),
@@ -20,6 +20,13 @@ The future version will include the newest tips and tricks of DeepReach develope
 
 (In the meantime...) This branch provides a moderately refactored version of DeepReach to facilitate easier outside research on DeepReach.
 
+## Reproduction Study.
+
+Authors<br>
+Lucas Stolba,
+Darian Wong,
+Ruiyang Wu
+
 ## High-Level Structure
 The code is organized as follows:
 * `dynamics/dynamics.py` defines the dynamics of the system.
@@ -29,6 +36,9 @@ The code is organized as follows:
 * `utils/diff_operators.py` contains implementations of differential operators.
 * `utils/losses.py` contains loss functions for the different reachability cases.
 * `run_experiment.py` starts a standard DeepReach experiment run.
+# Additionally from the reproduction study
+* `data_sumarizer.py` creates visuals and csv files documenting the training process for all models specified in the program.
+* `training_benchmarks` contains the documents created by `data_sumarizer.py`
 
 ## External Tutorial
 Follow along these [tutorial slides](https://docs.google.com/presentation/d/19zxhvZAHgVYDCRpCej2svCw21iRvcxQ0/edit?usp=drive_link&ouid=113852163991034806329&rtpof=true&sd=true) to get started, or continue reading below.
@@ -60,14 +70,6 @@ source env/bin/activate
 python run_experiment.py --mode train --experiment_class DeepReach --dynamics_class Dubins3D --experiment_name dubins3d_tutorial_run --minWith target --goalR 0.25 --velocity 0.6 --omega_max 1.1 --angle_alpha_factor 1.2 --set_mode avoid
 ```
 Note that the script provides many common training arguments, like `num_epochs` and the option to `pretrain`. Up-to-date, documentation for these different training schemes is lacking; feel free to reach out to the lab for questions. `use_CSL` is an experimental training option (similar in spirit to actor-critic methods) being developed by SIA for improved value function learning. 
-
-## Running comparison.py
-
-Example command. Currently there is only the two dubins scenarios. Will add more dynamics later.
-
-```
-python3 comparison.py --model-path runs/dubins3d_tutorial_run/training/checkpoints/model_epoch_30000.pth --output-dir runs/comparison_dubins --resolution 30 --time-horizon 0.5 --device cpu
-```
 
 ## Monitoring a DeepReach Experiment
 Results for the Dubins3D system specified in the above section can be found in this [online WandB project](https://wandb.ai/aklin/DeepReachTutorial).
