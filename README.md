@@ -27,6 +27,8 @@ Lucas Stolba,
 Darian Wong,
 Ruiyang Wu
 
+[Models Used](https://drive.google.com/drive/folders/1L9udMpwPN_XeDVfmfqmeLcqHg4mEb9SM?usp=sharing)
+
 ## High-Level Structure
 The code is organized as follows:
 * `dynamics/dynamics.py` defines the dynamics of the system.
