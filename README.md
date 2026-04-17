@@ -36,7 +36,7 @@ The code is organized as follows:
 * `utils/diff_operators.py` contains implementations of differential operators.
 * `utils/losses.py` contains loss functions for the different reachability cases.
 * `run_experiment.py` starts a standard DeepReach experiment run.
-# Additionally from the reproduction study
+### Additionally from the reproduction study
 * `data_sumarizer.py` creates visuals and csv files documenting the training process for all models specified in the program.
 * `training_benchmarks` contains the documents created by `data_sumarizer.py`
 
