@@ -1,0 +1,53 @@
+{
+  "system": "TwoVehicleCollision6D",
+  "grid_points": 21,
+  "total_points": 85766121,
+  "bounds": {
+    "x1": [
+      -1.0,
+      1.0
+    ],
+    "y1": [
+      -1.0,
+      1.0
+    ],
+    "x2": [
+      -1.0,
+      1.0
+    ],
+    "y2": [
+      -1.0,
+      1.0
+    ],
+    "theta1": [
+      -3.141592653589793,
+      3.141592653589793
+    ],
+    "theta2": [
+      -3.141592653589793,
+      3.141592653589793
+    ]
+  },
+  "periodic_dims": [
+    4,
+    5
+  ],
+  "params": {
+    "velocity": 0.6,
+    "omega_max": 1.1,
+    "collisionR": 0.25
+  },
+  "t_max": 1.0,
+  "t_step": 0.05,
+  "solve_time_s": 179.07,
+  "peak_memory_mb": 1636.99,
+  "result_shape": [
+    21,
+    21,
+    21,
+    21,
+    21,
+    21
+  ],
+  "brt_fraction_pct": 6.0
+}

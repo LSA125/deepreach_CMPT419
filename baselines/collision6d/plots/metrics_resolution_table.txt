@@ -1,0 +1,10 @@
+=== 6D Collision — Phase 3 Metrics ===
+
+   Res       Total pts    MSE (full)   BRT vol err      BL BRT      DR BRT  Notes
+------------------------------------------------------------------------------------------
+  11pt       1,771,561    4.2659e-03        24.33%      94,297      97,974  (full grid)
+  15pt      11,390,625    2.6600e-03        18.43%     611,110     622,879  (full grid)
+
+Note: BRT vol error should DECREASE as resolution INCREASES
+      (pixelation artifact in coarse baseline, not model error)
+      21pt full-grid metrics omitted — 21^6=85M pts exceeds available RAM
