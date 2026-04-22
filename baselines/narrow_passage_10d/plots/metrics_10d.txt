@@ -1,0 +1,18 @@
+=== 10D NarrowPassage (lr5) — Analysis ===
+
+Model checkpoint  : runs/narrow_passage_10d_run_lr5/training/checkpoints/model_epoch_160000.pth
+Epochs trained    : 160000
+Checkpoint epoch  : 160,000
+Learning rate     : 1e-05
+Architecture      : 3 hidden layers × 512 units (SIREN)
+avoid_fn_weight   : 0.5
+avoid_only        : True
+
+Final training loss (epoch 160k) : 1328.88
+Checkpoint loss   (epoch 110k)  : ~1360 (approx)
+
+--- Value function slice stats (x1,y1 plane) ---
+  Slice V range      : [-1.0265, 0.2384]
+  BRT pts (V<=0)     : 4116 / 6400 (64.3%)
+
+(No ground truth available — 10D grid is computationally infeasible)

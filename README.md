@@ -88,6 +88,28 @@ Systems are defined in `dynamics/dynamics.py` and inherit from the abstract `Dyn
 * `hamiltonian(self, state, dvds)`, which implements the system's hamiltonian
 * `plot_config(self)`, which specifies the state slices and axes visualized in training plots
 
+## Baselines — Classical HJ Reachability Analysis
+
+This repository includes a complete classical baseline suite using [`optimized_dp`](https://github.com/SFU-MARS/optimized_dp) (grid-based HJ solvers) to benchmark DeepReach across four scenario families: Dubins3D, Air3D, Two-Vehicle Collision (6D / 9D), and Narrow Passage (10D BRAT).
+
+### Demo Previews
+
+**Dubins3D** — single car safety override (DeepReach BRT avoidance)
+
+![Dubins3D Demo](baselines/dubins3d/plots/dubins3d_demo.gif)
+
+**6D Collision Avoidance** — two Dubins cars, crash vs. cooperative safety filter
+
+![6D Collision Demo](baselines/collision6d/plots/demo_collision_vs_safe.gif)
+
+**10D Narrow Passage (BRAT)** — nominal crash vs. DeepReach BRAT analytic safety filter
+
+![10D BRAT Demo](baselines/narrow_passage_10d/plots/demo_nominal_vs_brat.gif)
+
+For full analysis scripts, metrics, ground-truth grids, and scenario documentation, see **[`baselines/`](baselines/README.md)**.
+
+---
+
 ## Citation
 If you find our work useful in your research, please cite:
 ```
