@@ -153,7 +153,7 @@ python baselines/collision9d/analysis.py
 
 Two bicycle-model cars navigate a narrow corridor past a stranded vehicle (state dim = 10). Uses a Backward Reachable Avoid Tube (BRAT) formulation — the neural net certifies that a safe trajectory to the goal exists while avoiding all obstacles.
 
-**Finding:** The analytic avoid_fn gradient filter succeeds; the raw NN gradient (∇V) fails because the reach component dominates ∂V/∂x throughout the avoidance phase. Full discussion in docs/CHANGES.md.
+**Finding:** The analytic avoid_fn gradient filter succeeds; the raw NN gradient (∇V) fails because the reach component dominates ∂V/∂x throughout the avoidance phase. Full discussion in our final paper.
 
 | Script | Description |
 |---|---|
