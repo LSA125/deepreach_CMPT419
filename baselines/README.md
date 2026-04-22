@@ -94,15 +94,15 @@ python baselines/dubins3d/demo.py
 
 ### Air3D — 3D Pursuit-Evasion
 
-Two aircraft in relative coordinates (state: `x, y, ψ`). DeepReach is compared against the optimized_dp ground-truth (101 pts/dim). Includes a normalization retraining study that reduces the BRT error from 56% to 22%.
+Two aircraft in relative coordinates (state: `x, y, ψ`). DeepReach is compared against the optimized_dp ground-truth (101 pts/dim). The base model (lr=1e-4) diverged after ~12k epochs; the reported metrics are for the retrained **lr5 model** (lr=1e-5, 120k epochs). `analysis_normtrain.py` runs a separate replication study comparing lr5 vs. a no-pretrain normtrain variant.
 
-**Metrics:** MSE = 0.049, BRT vol error = 56% (base) → 22% (normtrain)
+**Metrics (lr5 model):** MSE = 0.025, BRT vol error = 6.24%, Control agreement = 75.2%
 
 | Script | Description |
 |---|---|
 | `optimized_dp/air3d_solve.py` | Solve 101-pt grid (run in `odp` env) |
-| `air3d/analysis.py` | Value comparison, BRT overlays, gradient quiver, control field, metrics (`lr5` model) |
-| `air3d/analysis_normtrain.py` | Three-panel comparison: ground truth vs. base vs. normtrain model |
+| `air3d/analysis.py` | Value comparison, BRT overlays, gradient quiver, control field, metrics (lr5 model) |
+| `air3d/analysis_normtrain.py` | Three-panel comparison: ground truth vs. lr5 vs. normtrain (no-pretrain) model |
 
 ```bash
 python baselines/air3d/analysis.py
