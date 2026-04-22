@@ -1,0 +1,17 @@
+=== 10D NarrowPassage BRAT — Analysis ===
+
+Model checkpoint  : runs/narrow_passage_10d_run_BRAT/training/checkpoints/model_epoch_160000.pth
+Checkpoint epoch  : 160,000
+Learning rate     : 1e-05
+Architecture      : 3 × 512 (SIREN)
+avoid_fn_weight   : 0.5
+avoid_only        : False  (False = BRAT, True = BRT)
+
+NOTE: This is the BRAT formulation (avoid_only=False), matching the
+      original DeepReach paper. Previous run used BRT (avoid_only=True).
+
+--- Value function slice stats (x1,y1 plane) ---
+  V range      : [5.9764, 8.9202]
+  BRAT pts (V<=0) : 0 / 6400 (0.0%)
+
+(No ground truth — 10D grid computationally infeasible)

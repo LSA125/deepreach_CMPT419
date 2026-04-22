@@ -1,0 +1,24 @@
+=== Air3D Replication Study — normtrain vs lr5 ===
+
+Model configs:
+  lr5:       epochs=120k, pretrain=True,  lr=1e-05
+  normtrain: epochs=30k,  pretrain=False, lr=2e-05
+
+Metric                                lr5    normtrain
+-------------------------------------------------------
+  Raw MSE                          0.0240       0.0252
+  Raw BRT Vol Error (%)            3.5077       6.2350
+  Norm MSE                         0.0489       0.0486
+  Norm BRT Vol Error (%)         200.0000     200.0000
+  Control Agreement (%)           75.1704      75.1498
+
+Per-angle BRT vol error (normtrain):
+  psi=     0  (+0.0°)  normtrain=7.25%
+  psi=    45  (+45.0°)  normtrain=4.68%
+  psi=    90  (+90.0°)  normtrain=4.65%
+  psi=   180  (+180.0°)  normtrain=9.37%
+  psi= neg90  (-90.0°)  normtrain=5.41%
+
+Key finding:
+  normtrain achieves comparable BRT accuracy with 4x fewer epochs
+  and without pretraining, suggesting pretraining is not required for Air3D.

@@ -1,0 +1,23 @@
+=== 9D MultiVehicleCollision — Analysis ===
+
+Model checkpoint  : runs/collision_9d_run/training/checkpoints/model_epoch_160000.pth
+Checkpoint epoch  : 160,000
+Learning rate     : 0.0001
+Architecture      : 3 × 512 (SIREN)
+Pretrain iters    : 60000
+Dynamics class    : MultiVehicleCollision
+
+--- Training convergence ---
+  Phase 1 (0-60k):  Dirichlet loss converges to ~4.5 (good)
+  Phase 2 (60k-160k): PDE loss spikes to ~28k, stagnates ~10k
+  Note: lr=1e-4 (default) — significantly worse than 10D lr5 (~1.3k)
+
+--- Value function slice stats (x1,y1 plane, ego heading 90°) ---
+  V range       : [-0.2897, 0.5262]
+  BRT pts (V<=0): 871 / 6400 (13.6%)
+
+--- Admissibility check (random state sampling) ---
+  Physically safe states (min_dist > 2r):   100.0% have V > 0
+  Physically unsafe states (min_dist <= r): 100.0% have V <= 0
+
+(No ground truth — 9D grid computationally infeasible)
